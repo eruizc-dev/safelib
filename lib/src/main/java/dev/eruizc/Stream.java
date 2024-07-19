@@ -6,63 +6,63 @@ import java.util.function.*;
 
 public class Stream<T> {
     private final Iterator<T> iterator;
-    private final ArrayList<Transformation<T, T>> transformations;
+    private Function<Object, Object> transformation;
 
     public Stream(Iterator<T> iterator) {
         this.iterator = iterator;
-        this.transformations = new ArrayList<>();
+        this.transformation = x -> x;
+    }
+
+    private Stream(Iterator<T> iterator, Function<Object, Object> transformation) {
+        this.iterator = iterator;
+        this.transformation = transformation;
     }
 
     public int count() {
         return this.reduce(0, (acc, i) -> acc + 1);
     }
 
+    @SuppressWarnings("unchecked")
     public Stream<T> filter(Predicate<T> predicate) {
-        transformations.add(new Transformation.Filter<T>(predicate));
+        this.transformation = this.transformation.andThen(x -> {
+            if (!predicate.test((T) x)) {
+                throw new ItemFiltered();
+            }
+            return x;
+        });
         return this;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public <K> Stream<K> map(Function<T, K> mapper) {
+        return new Stream(iterator, transformation.andThen((Object x) -> (Object) mapper.apply((T) x)));
     }
 
     public ArrayList<T> toList() {
         return this.reduce(new ArrayList<T>(), (acc, i) -> { acc.add(i); });
     }
 
+    @SuppressWarnings("unchecked")
     public <E> E reduce(E accumulator, BiConsumer<E, T> reducer) {
         while(iterator.hasNext()) {
-            reducer.accept(accumulator, iterator.next());
+            try {
+                var item = transformation.apply(iterator.next());
+                reducer.accept(accumulator, (T) item);
+            } catch (ItemFiltered e) { }
         }
         return accumulator;
     }
 
+    @SuppressWarnings("unchecked")
     public <E> E reduce(E accumulator, BiFunction<E, T, E>  reducer) {
         while(iterator.hasNext()) {
-            var item = iterator.next();
-            for (var transformation: transformations) {
-                item = transformation.apply(item);
-                if (item == null) {
-                    break;
-                }
-            }
-
-            if (item != null) {
-                accumulator = reducer.apply(accumulator, item);
-            }
+            try {
+                var item = transformation.apply(iterator.next());
+                accumulator = reducer.apply(accumulator, (T) item);
+            } catch (ItemFiltered e) { }
         }
         return accumulator;
     }
 
-    public static sealed interface Transformation<T, R> permits Transformation.Filter {
-        public R apply(T item);
-
-        public static final class Filter<T> implements Transformation<T, T> {
-            public final Predicate<T> predicate;
-
-            public Filter(Predicate<T> predicate) {
-                this.predicate = predicate;
-            }
-
-            @Override public T apply(T item) {
-                return predicate.test(item) ? item : null;
-            }
-        }
-    }
+    private static class ItemFiltered extends Error { }
 }

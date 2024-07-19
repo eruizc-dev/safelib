@@ -28,4 +28,12 @@ public class StreamTest {
                 .reduce(0, (acc, i) -> acc + i);
         assertEquals(18, sum);
     }
+
+    @Test void mapping() {
+        var list = new ArrayList<>(1, 2, 3);
+        var str = list.stream()
+                .map(x -> x.toString())
+                .reduce("", (acc, x) -> acc + x );
+        assertEquals("123", str);
+    }
 }
