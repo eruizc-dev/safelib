@@ -1,10 +1,9 @@
 package dev.eruizc.collections.lists;
 
-import java.util.Iterator;
-
 import dev.eruizc.Stream;
 import dev.eruizc.Streamable;
 import dev.eruizc.safelib.Optional;
+import java.util.Iterator;
 
 public class ArrayList<T> implements Iterable<T>, Streamable<T> {
     private int size;
@@ -78,5 +77,14 @@ public class ArrayList<T> implements Iterable<T>, Streamable<T> {
                 return (T) array[next++];
             }
         };
+    }
+
+    public boolean contains(T str) {
+        for (var item : this) {
+            if (item.equals(str)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
