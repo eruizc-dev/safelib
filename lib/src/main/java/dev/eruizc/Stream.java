@@ -5,25 +5,25 @@ import java.util.Iterator;
 import java.util.function.*;
 
 public class Stream<T> {
-    private final Iterator<T> iterator;
-    private Function<Object, Object> transformation;
+    protected final Iterator<T> iterator;
+    protected Function<Object, Object> transformation;
 
     public Stream(Iterator<T> iterator) {
         this.iterator = iterator;
         this.transformation = x -> x;
     }
 
-    private Stream(Iterator<T> iterator, Function<Object, Object> transformation) {
+    protected Stream(Iterator<T> iterator, Function<Object, Object> transformation) {
         this.iterator = iterator;
         this.transformation = transformation;
     }
 
-    public int count() {
+    public final int count() {
         return this.reduce(0, (acc, i) -> acc + 1);
     }
 
     @SuppressWarnings("unchecked")
-    public Stream<T> filter(Predicate<T> predicate) {
+    public final Stream<T> filter(Predicate<T> predicate) {
         this.transformation = this.transformation.andThen(x -> {
             if (!predicate.test((T) x)) {
                 throw new ItemFiltered();
@@ -34,23 +34,19 @@ public class Stream<T> {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public <K> Stream<K> map(Function<T, K> mapper) {
+    public final <K> Stream<K> map(Function<T, K> mapper) {
         return new Stream(iterator, transformation.andThen((Object x) -> (Object) mapper.apply((T) x)));
     }
 
-    public ArrayList<T> toList() {
+    public final ArrayList<T> toList() {
         return this.reduce(new ArrayList<T>(), (acc, i) -> { acc.add(i); });
     }
 
-    @SuppressWarnings("unchecked")
-    public <E> E reduce(E accumulator, BiConsumer<E, T> reducer) {
-        while(iterator.hasNext()) {
-            try {
-                var item = transformation.apply(iterator.next());
-                reducer.accept(accumulator, (T) item);
-            } catch (ItemFiltered e) { }
-        }
-        return accumulator;
+    public final <E extends Object> E reduce(E accumulator, BiConsumer<E, T> reducer) {
+        return reduce(accumulator, (acc, x) -> {
+            reducer.accept(acc, x);
+            return acc;
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -64,5 +60,9 @@ public class Stream<T> {
         return accumulator;
     }
 
-    private static class ItemFiltered extends Error { }
+    public final ParallelStream<T> parallel() {
+        return new ParallelStream<T>(iterator, transformation);
+    }
+
+    protected static class ItemFiltered extends Error { }
 }
