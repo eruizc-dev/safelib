@@ -1,11 +1,13 @@
 package dev.eruizc.safelib;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public sealed interface Optional<T> permits Optional.Present, Optional.Empty {
     public boolean isPresent();
     public boolean isEmpty();
     public Optional<T> ifPresent(Consumer<T> consumer);
+    public <T2> Optional<T2> map(Function<T, T2> function);
     public T orElse(T value);
 
     public static <T> Optional<T> of(T obj) {
@@ -40,6 +42,11 @@ public sealed interface Optional<T> permits Optional.Present, Optional.Empty {
             return this;
         }
 
+        @Override public <T2> Optional<T2> map(Function<T, T2> function) {
+            var result = function.apply(this.obj);
+            return new Present<>(result);
+        }
+
         @Override public T orElse(T value) {
             return this.obj;
         }
@@ -58,6 +65,11 @@ public sealed interface Optional<T> permits Optional.Present, Optional.Empty {
 
         @Override public Optional<T> ifPresent(Consumer<T> consumer) {
             return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override public <T2> Optional<T2> map(Function<T, T2> function) {
+            return (Optional<T2>) this;
         }
 
         @Override public T orElse(T value) {

@@ -25,4 +25,18 @@ class OptionalTest {
             () -> assertFalse(x instanceof Optional.Empty)
         );
     }
+
+    @Test void mapOk() {
+        var x = Optional.of("128");
+        var result = x.map(str -> Integer.valueOf(str));
+        assertTrue(result.isPresent());
+        assertEquals(128, result.orElse(33));
+    }
+
+    @Test void mapEmpty() {
+        Optional<String> x =  Optional.empty();
+        var result = x.map(str -> Integer.valueOf(str));
+        assertTrue(result.isEmpty());
+        assertEquals(33, result.orElse(33));
+    }
 }
