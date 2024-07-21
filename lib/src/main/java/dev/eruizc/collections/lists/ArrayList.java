@@ -1,11 +1,10 @@
 package dev.eruizc.collections.lists;
 
-import dev.eruizc.Stream;
-import dev.eruizc.Streamable;
+import dev.eruizc.collections.List;
 import dev.eruizc.safelib.Optional;
 import java.util.Iterator;
 
-public class ArrayList<T> implements Iterable<T>, Streamable<T> {
+public class ArrayList<T> implements List<T> {
     private int size;
     private Object[] array;
 
@@ -31,7 +30,7 @@ public class ArrayList<T> implements Iterable<T>, Streamable<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public Optional<T> get(int index) {
+    @Override public Optional<T> get(int index) {
         return index < size ? Optional.of((T) array[index]) : Optional.empty();
     }
 
@@ -57,11 +56,6 @@ public class ArrayList<T> implements Iterable<T>, Streamable<T> {
     }
 
     @Override
-    public Stream<T> stream() {
-        return new Stream<>(this.iterator());
-    }
-
-    @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
             private int next = 0;
@@ -79,12 +73,16 @@ public class ArrayList<T> implements Iterable<T>, Streamable<T> {
         };
     }
 
-    public boolean contains(T str) {
-        for (var item : this) {
-            if (item.equals(str)) {
-                return true;
+    public boolean contains(T item) {
+        return this.indexOf(item).isPresent();
+    }
+
+    @Override public Optional<Integer> indexOf(T item) {
+        for (int i = 0; i < this.size; i++) {
+            if (item.equals(this.array[i])) {
+                return Optional.of(i);
             }
         }
-        return false;
+        return Optional.empty();
     }
 }
